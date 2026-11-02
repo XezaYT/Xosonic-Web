@@ -12,11 +12,11 @@ const sessions = new Map<string, ActiveSession>();
 
 function cleanup() {
   const now = Date.now();
-  for (const [id, session] of sessions.entries()) {
+  sessions.forEach((session, id) => {
     if (now - session.lastSeen > 45000) {
       sessions.delete(id);
     }
-  }
+  });
 }
 
 export async function POST(request: Request) {
@@ -40,14 +40,14 @@ export async function POST(request: Request) {
     let activeListeners = 0;
     const nowPlayingList: { title: string; artist: string }[] = [];
 
-    for (const s of sessions.values()) {
+    sessions.forEach((s) => {
       if (s.isPlaying) {
         activeListeners++;
         if (s.trackTitle && s.artist) {
           nowPlayingList.push({ title: s.trackTitle, artist: s.artist });
         }
       }
-    }
+    });
 
     return NextResponse.json({
       totalConnected: Math.max(1, sessions.size),
@@ -66,9 +66,9 @@ export async function POST(request: Request) {
 export async function GET() {
   cleanup();
   let activeListeners = 0;
-  for (const s of sessions.values()) {
+  sessions.forEach((s) => {
     if (s.isPlaying) activeListeners++;
-  }
+  });
 
   return NextResponse.json({
     totalConnected: Math.max(1, sessions.size),
