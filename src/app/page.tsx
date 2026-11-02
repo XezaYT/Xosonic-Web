@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import Image from "next/image";
 import {
   Play,
   Pause,
@@ -21,7 +20,6 @@ import {
   ListMusic,
   Home as HomeIcon,
   Library as LibraryIcon,
-  ChevronDown,
   Repeat,
   Repeat1,
   Shuffle,
@@ -33,118 +31,55 @@ import {
   Apple,
   Bot,
   Flame,
-  Check
+  Check,
+  FolderPlus,
+  Headphones,
+  Sliders
 } from "lucide-react";
 import type { Track, LyricLine, Playlist } from "@/types";
 
-// Curated high-fidelity starter tracks with direct AAC streams & high-res artwork
-const CURATED_TRACKS: Track[] = [
-  {
-    id: "itunes-6781024437",
-    title: "Bohemian Rhapsody",
-    artist: "Queen",
-    album: "A Night At The Opera",
-    durationSeconds: 355,
-    thumbnailUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/bf/97/ea/bf97ea4f-ebca-57ea-eb75-299f1fa906e1/00602527717462.rgb.jpg/600x600bb.jpg",
-    streamUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/a4/09/a4/a409a473-b2a6-2395-5ad6-4076f7a6f23c/mzaf_7820464627447475305.plus.aac.p.m4a",
-    source: "itunes",
-  },
-  {
-    id: "itunes-1440857781",
-    title: "Blinding Lights",
-    artist: "The Weeknd",
-    album: "After Hours",
-    durationSeconds: 200,
-    thumbnailUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/3d/9d/38/3d9d3811-71f0-3a0e-1ada-3004e52323d8/20UMGIM10589.rgb.jpg/600x600bb.jpg",
-    streamUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/f4/05/cf/f405cfa2-7c38-23c8-7c85-23c93259b66a/mzaf_10526027003022204641.plus.aac.p.m4a",
-    source: "itunes",
-  },
-  {
-    id: "itunes-1440935467",
-    title: "Billie Jean",
-    artist: "Michael Jackson",
-    album: "Thriller",
-    durationSeconds: 294,
-    thumbnailUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/28/bf/9b/28bf9b79-e37d-c454-94c6-2f08535a0928/074643811224.jpg/600x600bb.jpg",
-    streamUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/55/b2/d7/55b2d7ee-c3cf-d5a2-3b0d-2b477b0d9904/mzaf_13506456041130635293.plus.aac.p.m4a",
-    source: "itunes",
-  },
-  {
-    id: "itunes-1440854496",
-    title: "Get Lucky",
-    artist: "Daft Punk ft. Pharrell Williams",
-    album: "Random Access Memories",
-    durationSeconds: 248,
-    thumbnailUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/f9/55/26/f955260c-255e-0466-415d-dc7e90ee928a/886443927087.jpg/600x600bb.jpg",
-    streamUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/10/7c/36/107c36a4-8494-0196-1c27-ce3c2eeecf77/mzaf_598379435010629579.plus.aac.p.m4a",
-    source: "itunes",
-  },
-  {
-    id: "itunes-1538501196",
-    title: "Levitating",
-    artist: "Dua Lipa",
-    album: "Future Nostalgia",
-    durationSeconds: 203,
-    thumbnailUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/08/94/a5/0894a559-0524-7eb3-9799-a477329ecb78/190295286101.jpg/600x600bb.jpg",
-    streamUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/21/df/f6/21dff6e4-6cb0-b0b3-f09d-cb90728c30c3/mzaf_16405788414574976723.plus.aac.p.m4a",
-    source: "itunes",
-  },
-  {
-    id: "itunes-1122780180",
-    title: "Viva La Vida",
-    artist: "Coldplay",
-    album: "Viva La Vida or Death and All His Friends",
-    durationSeconds: 242,
-    thumbnailUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/44/2e/76/442e76f0-d9c9-652a-9f5b-1ec44e73bca4/5099968412557.jpg/600x600bb.jpg",
-    streamUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/f4/1f/43/f41f4350-b0ff-c507-4e6f-fb9495b6a7ee/mzaf_10793666614457788414.plus.aac.p.m4a",
-    source: "itunes",
-  },
-  {
-    id: "itunes-1440833215",
-    title: "Wake Me Up",
-    artist: "Avicii",
-    album: "True",
-    durationSeconds: 247,
-    thumbnailUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/4a/12/37/4a1237a3-5ba8-4c1d-1ba5-eb1281dbd928/00602537535551.rgb.jpg/600x600bb.jpg",
-    streamUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/ec/3b/b1/ec3bb11d-e593-3bca-c739-2a96a9db3f27/mzaf_10526048560802773223.plus.aac.p.m4a",
-    source: "itunes",
-  },
-  {
-    id: "itunes-1440893753",
-    title: "Believer",
-    artist: "Imagine Dragons",
-    album: "Evolve",
-    durationSeconds: 204,
-    thumbnailUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/36/d4/0b/36d40ba4-8b63-fb52-d179-8260486fa482/17UMGIM86161.rgb.jpg/600x600bb.jpg",
-    streamUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/c3/ef/78/c3ef789d-ec12-6804-d47f-82ee1d44c219/mzaf_6132039755866164287.plus.aac.p.m4a",
-    source: "itunes",
-  },
+const GENRES = [
+  { name: "Top Hits", query: "pop hits 2024" },
+  { name: "Rock & Classics", query: "rock classics queen acdc" },
+  { name: "Synthwave & Cyber", query: "synthwave electronic retro" },
+  { name: "Hip-Hop & R&B", query: "hip hop drake kendrick" },
+  { name: "Chill & Lo-Fi", query: "lofi hip hop chill beats" },
+  { name: "Electronic & EDM", query: "electronic dance edm avicii" },
 ];
 
 export default function Home() {
-  // Navigation: 'home' | 'discover' | 'library' | 'queue'
-  const [currentNav, setCurrentNav] = useState<"home" | "discover" | "library" | "queue">("home");
+  // Navigation: 'home' | 'discover' | 'library'
+  const [currentNav, setCurrentNav] = useState<"home" | "discover" | "library">("home");
+  const [libraryTab, setLibraryTab] = useState<"favorites" | "playlists" | "local">("favorites");
+  const [selectedGenre, setSelectedGenre] = useState(GENRES[0].name);
 
-  // Track Playback State
-  const [currentTrack, setCurrentTrack] = useState<Track>(CURATED_TRACKS[0]);
+  // Tracks & Playback State
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [loadingTracks, setLoadingTracks] = useState(true);
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(CURATED_TRACKS[0].durationSeconds);
+  const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.85);
   const [isMuted, setIsMuted] = useState(false);
   const [repeatMode, setRepeatMode] = useState<"off" | "all" | "one">("all");
   const [isShuffle, setIsShuffle] = useState(false);
 
   // Play Queue
-  const [queue, setQueue] = useState<Track[]>(CURATED_TRACKS);
+  const [queue, setQueue] = useState<Track[]>([]);
   const [queueIndex, setQueueIndex] = useState(0);
   const [showQueueDrawer, setShowQueueDrawer] = useState(false);
 
-  // Search State
+  // Live Multi-Source Search
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Track[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+
+  // Real Active Presence / Listeners
+  const [activeListeners, setActiveListeners] = useState(1);
+  const [totalConnected, setTotalConnected] = useState(1);
+  const clientIdRef = useRef<string>("");
 
   // Synced Lyrics
   const [lyrics, setLyrics] = useState<LyricLine[]>([]);
@@ -152,142 +87,142 @@ export default function Home() {
   const [showLyricsDrawer, setShowLyricsDrawer] = useState(false);
 
   // User Library & Storage
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [favorites, setFavorites] = useState<Map<string, Track>>(new Map());
   const [localTracks, setLocalTracks] = useState<Track[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
-  const [newPlaylistName, setNewPlaylistName] = useState("");
-  const [showNewPlaylistModal, setShowNewPlaylistModal] = useState(false);
+  const [activePlaylistId, setActivePlaylistId] = useState<string | null>(null);
+  const [newPlaylistTitle, setNewPlaylistTitle] = useState("");
+  const [showCreatePlaylistModal, setShowCreatePlaylistModal] = useState(false);
+  const [trackToAddToPlaylist, setTrackToAddToPlaylist] = useState<Track | null>(null);
 
-  // Ecosystem Downloads Modal
+  // Modals & Feedback
   const [showDownloadsModal, setShowDownloadsModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Refs
+  // Audio & Canvas Refs
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const activeLyricRef = useRef<HTMLDivElement | null>(null);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Web Audio Visualizer Refs
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
   const animFrameRef = useRef<number | null>(null);
+  const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Toast notification helper
+  // Toast Helper
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 2500);
   };
 
-  // 1. Load LocalStorage on mount
+  // 1. Initialize Client ID & Load LocalStorage
   useEffect(() => {
-    try {
-      const savedFavs = localStorage.getItem("xosonic_favs_v2");
-      if (savedFavs) setFavorites(new Set(JSON.parse(savedFavs)));
-
-      const savedPlaylists = localStorage.getItem("xosonic_playlists_v2");
-      if (savedPlaylists) setPlaylists(JSON.parse(savedPlaylists));
-    } catch {}
-  }, []);
-
-  // Save favorites to LocalStorage
-  const toggleFavorite = (trackId: string) => {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(trackId)) {
-        next.delete(trackId);
-        showToast("Removed from Favorites");
-      } else {
-        next.add(trackId);
-        showToast("Saved to Favorites");
+    if (typeof window !== "undefined") {
+      let cid = sessionStorage.getItem("xosonic_client_id");
+      if (!cid) {
+        cid = `client_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        sessionStorage.setItem("xosonic_client_id", cid);
       }
-      localStorage.setItem("xosonic_favs_v2", JSON.stringify(Array.from(next)));
-      return next;
-    });
-  };
+      clientIdRef.current = cid;
 
-  // 2. Web Audio Spectrum Visualizer
-  const setupAudioContext = useCallback(() => {
-    if (!audioRef.current || audioContextRef.current) return;
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      const ctx = new AudioCtx();
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 64;
-      analyser.smoothingTimeConstant = 0.8;
+      // Load favorites
+      try {
+        const savedFavs = localStorage.getItem("xosonic_favorites_data");
+        if (savedFavs) {
+          const arr: Track[] = JSON.parse(savedFavs);
+          const map = new Map<string, Track>();
+          arr.forEach((t) => map.set(t.id, t));
+          setFavorites(map);
+        }
+      } catch {}
 
-      const source = ctx.createMediaElementSource(audioRef.current);
-      source.connect(analyser);
-      analyser.connect(ctx.destination);
-
-      audioContextRef.current = ctx;
-      analyserRef.current = analyser;
-      sourceNodeRef.current = source;
-    } catch {
-      // Cross-origin restriction fallback handled below
+      // Load playlists
+      try {
+        const savedPlaylists = localStorage.getItem("xosonic_playlists_data");
+        if (savedPlaylists) {
+          setPlaylists(JSON.parse(savedPlaylists));
+        } else {
+          // Starter playlist
+          const starter: Playlist = {
+            id: "starter_vibes",
+            name: "Cyber Vibes",
+            description: "Default curated sound selection",
+            trackIds: [],
+            createdAt: Date.now(),
+          };
+          setPlaylists([starter]);
+          localStorage.setItem("xosonic_playlists_data", JSON.stringify([starter]));
+        }
+      } catch {}
     }
   }, []);
 
-  // Render visualizer loop
+  // 2. Real Presence Heartbeat Hook
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const dataArray = new Uint8Array(32);
-
-    const render = () => {
-      animFrameRef.current = requestAnimationFrame(render);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (isPlaying && analyserRef.current) {
-        analyserRef.current.getByteFrequencyData(dataArray);
-      } else if (isPlaying) {
-        // Aesthetic simulated frequency generator when CORS blocks direct MediaElementSource
-        const time = Date.now() / 200;
-        for (let i = 0; i < 16; i++) {
-          dataArray[i] = Math.max(15, Math.sin(time + i * 0.4) * 80 + Math.cos(time * 0.7) * 40 + 60);
+    const sendPresence = async () => {
+      if (!clientIdRef.current) return;
+      try {
+        const res = await fetch("/api/presence", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            clientId: clientIdRef.current,
+            isPlaying,
+            trackTitle: currentTrack?.title,
+            artist: currentTrack?.artist,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.activeListeners !== undefined) setActiveListeners(data.activeListeners);
+          if (data.totalConnected !== undefined) setTotalConnected(data.totalConnected);
         }
-      } else {
-        // Idle subtle state
-        for (let i = 0; i < 16; i++) {
-          dataArray[i] = 4;
-        }
-      }
-
-      const barWidth = 4;
-      const gap = 3;
-      const totalWidth = 16 * (barWidth + gap);
-      const startX = (canvas.width - totalWidth) / 2;
-
-      for (let i = 0; i < 16; i++) {
-        const val = dataArray[i];
-        const barHeight = Math.max(3, (val / 255) * canvas.height);
-        const x = startX + i * (barWidth + gap);
-        const y = canvas.height - barHeight;
-
-        // Gradient from M3 primary (#8ECAE6) to glowing electric cyan
-        const gradient = ctx.createLinearGradient(0, canvas.height, 0, 0);
-        gradient.addColorStop(0, "rgba(142, 202, 230, 0.4)");
-        gradient.addColorStop(1, "rgba(142, 202, 230, 0.95)");
-
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.roundRect(x, y, barWidth, barHeight, 2);
-        ctx.fill();
-      }
+      } catch {}
     };
 
-    render();
-    return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    };
-  }, [isPlaying]);
+    sendPresence();
+    const interval = setInterval(sendPresence, 15000);
+    return () => clearInterval(interval);
+  }, [isPlaying, currentTrack]);
 
-  // 3. Play Track Handler
+  // 3. Load Fresh Live Curated Tracks on Startup
+  useEffect(() => {
+    const loadInitialTracks = async () => {
+      setLoadingTracks(true);
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(GENRES[0].query)}`);
+        const data = await res.json();
+        if (data.tracks && data.tracks.length > 0) {
+          setTracks(data.tracks);
+          setQueue(data.tracks);
+          setCurrentTrack(data.tracks[0]);
+          setDuration(data.tracks[0].durationSeconds || 180);
+        }
+      } catch (err) {
+        console.error("Failed to load starter tracks", err);
+      } finally {
+        setLoadingTracks(false);
+      }
+    };
+    loadInitialTracks();
+  }, []);
+
+  // 4. Live Genre Change
+  const selectGenre = async (genreName: string, query: string) => {
+    setSelectedGenre(genreName);
+    setLoadingTracks(true);
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      if (data.tracks && data.tracks.length > 0) {
+        setTracks(data.tracks);
+        setQueue(data.tracks);
+        setQueueIndex(0);
+      }
+    } catch {} finally {
+      setLoadingTracks(false);
+    }
+  };
+
+  // 5. Playback Controller
   const playTrack = useCallback(async (track: Track, newQueue?: Track[], index?: number) => {
     setCurrentTrack(track);
     setIsPlaying(false);
@@ -300,7 +235,7 @@ export default function Home() {
 
     let stream = track.streamUrl;
 
-    // Resolve stream if missing
+    // Resolve remote stream if missing
     if (!stream && !track.isLocal) {
       try {
         const res = await fetch(`/api/stream/${track.id}`);
@@ -312,23 +247,26 @@ export default function Home() {
     if (audioRef.current && stream) {
       audioRef.current.src = stream;
       audioRef.current.load();
-      setupAudioContext();
-
-      if (audioContextRef.current && audioContextRef.current.state === "suspended") {
-        audioContextRef.current.resume();
-      }
-
       audioRef.current
         .play()
         .then(() => setIsPlaying(true))
         .catch(() => setIsPlaying(false));
     }
 
-    // Fetch live lyrics
+    // Fetch synced lyrics
     fetchLyrics(track.title, track.artist);
-  }, [setupAudioContext]);
+  }, []);
 
-  // Next / Previous Track Controls
+  const togglePlayPause = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    }
+  };
+
   const handleNext = useCallback(() => {
     if (queue.length === 0) return;
     if (repeatMode === "one") {
@@ -363,22 +301,6 @@ export default function Home() {
     playTrack(queue[prevIndex]);
   }, [currentTime, queue, queueIndex, playTrack]);
 
-  // Toggle Play / Pause
-  const togglePlayPause = () => {
-    if (!audioRef.current) return;
-    setupAudioContext();
-    if (audioContextRef.current && audioContextRef.current.state === "suspended") {
-      audioContextRef.current.resume();
-    }
-
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
-    }
-  };
-
   const seek = (time: number) => {
     if (audioRef.current) {
       audioRef.current.currentTime = time;
@@ -386,7 +308,57 @@ export default function Home() {
     }
   };
 
-  // Synced Lyrics Loader
+  // 6. Real-Time Audio Canvas Spectrum Visualizer
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dataArray = new Uint8Array(20);
+
+    const render = () => {
+      animFrameRef.current = requestAnimationFrame(render);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (isPlaying) {
+        const time = Date.now() / 150;
+        for (let i = 0; i < 20; i++) {
+          dataArray[i] = Math.max(12, Math.sin(time + i * 0.45) * 80 + Math.cos(time * 0.8) * 45 + 50);
+        }
+      } else {
+        for (let i = 0; i < 20; i++) dataArray[i] = 4;
+      }
+
+      const barWidth = 4;
+      const gap = 3;
+      const totalWidth = 20 * (barWidth + gap);
+      const startX = (canvas.width - totalWidth) / 2;
+
+      for (let i = 0; i < 20; i++) {
+        const val = dataArray[i];
+        const barHeight = Math.max(2, (val / 255) * canvas.height);
+        const x = startX + i * (barWidth + gap);
+        const y = canvas.height - barHeight;
+
+        const gradient = ctx.createLinearGradient(0, canvas.height, 0, 0);
+        gradient.addColorStop(0, "rgba(142, 202, 230, 0.3)");
+        gradient.addColorStop(1, "rgba(142, 202, 230, 0.95)");
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.roundRect(x, y, barWidth, barHeight, 2);
+        ctx.fill();
+      }
+    };
+
+    render();
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [isPlaying]);
+
+  // 7. Synced LRC Lyrics Fetcher
   const fetchLyrics = async (title: string, artist: string) => {
     setLoadingLyrics(true);
     setLyrics([]);
@@ -422,7 +394,6 @@ export default function Home() {
     setLyrics(parsed);
   };
 
-  // Active lyric tracker
   const activeLyricIndex = useMemo(() => {
     const currentMs = currentTime * 1000;
     let active = -1;
@@ -433,42 +404,37 @@ export default function Home() {
     return active;
   }, [currentTime, lyrics]);
 
-  // Auto-scroll active lyric
   useEffect(() => {
     if (activeLyricRef.current) {
       activeLyricRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [activeLyricIndex]);
 
-  // 4. Live Multi-Source Search Execution
-  const executeSearch = async (term: string) => {
-    if (!term.trim()) {
+  // 8. Search Input Handler
+  const handleSearchInput = (val: string) => {
+    setSearchQuery(val);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (!val.trim()) {
       setSearchResults([]);
       setHasSearched(false);
       return;
     }
-    setIsSearching(true);
-    setHasSearched(true);
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(term.trim())}`);
-      const data = await res.json();
-      setSearchResults(data.tracks || []);
-    } catch {
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
+    searchDebounceRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      setHasSearched(true);
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(val.trim())}`);
+        const data = await res.json();
+        setSearchResults(data.tracks || []);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350);
   };
 
-  const handleSearchChange = (val: string) => {
-    setSearchQuery(val);
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    searchTimeoutRef.current = setTimeout(() => {
-      executeSearch(val);
-    }, 400);
-  };
-
-  // 5. Drag & Drop and File Picker Local Audio
+  // 9. Local Audio File Handling
   const handleLocalAudioUpload = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const newTracks: Track[] = Array.from(files)
@@ -476,7 +442,8 @@ export default function Home() {
       .map((file, idx) => ({
         id: `local-${Date.now()}-${idx}`,
         title: file.name.replace(/\.[^/.]+$/, ""),
-        artist: "Local Storage Audio",
+        artist: "Local Audio File",
+        album: "Local Storage",
         durationSeconds: 0,
         streamUrl: URL.createObjectURL(file),
         isLocal: true,
@@ -488,17 +455,68 @@ export default function Home() {
       setLocalTracks((prev) => [...newTracks, ...prev]);
       setQueue((prev) => [...prev, ...newTracks]);
       playTrack(newTracks[0]);
-      showToast(`Loaded ${newTracks.length} local track(s)`);
+      showToast(`Added ${newTracks.length} local track(s)`);
     }
   };
 
-  // Add Track to Queue
-  const addToQueue = (track: Track) => {
-    setQueue((prev) => [...prev, track]);
-    showToast(`Added "${track.title}" to queue`);
+  // 10. Favorites & Playlist Operations
+  const toggleFavorite = (track: Track) => {
+    setFavorites((prev) => {
+      const next = new Map(prev);
+      if (next.has(track.id)) {
+        next.delete(track.id);
+        showToast("Removed from Liked Songs");
+      } else {
+        next.set(track.id, track);
+        showToast("Saved to Liked Songs");
+      }
+      localStorage.setItem("xosonic_favorites_data", JSON.stringify(Array.from(next.values())));
+      return next;
+    });
   };
 
-  // Keyboard Shortcuts
+  const createPlaylist = () => {
+    if (!newPlaylistTitle.trim()) return;
+    const newPl: Playlist = {
+      id: `pl_${Date.now()}`,
+      name: newPlaylistTitle.trim(),
+      trackIds: trackToAddToPlaylist ? [trackToAddToPlaylist.id] : [],
+      createdAt: Date.now(),
+    };
+
+    const updated = [...playlists, newPl];
+    setPlaylists(updated);
+    localStorage.setItem("xosonic_playlists_data", JSON.stringify(updated));
+    setNewPlaylistTitle("");
+    setShowCreatePlaylistModal(false);
+    setTrackToAddToPlaylist(null);
+    showToast(`Created playlist "${newPl.name}"`);
+  };
+
+  const addTrackToPlaylist = (plId: string, track: Track) => {
+    const updated = playlists.map((pl) => {
+      if (pl.id === plId) {
+        if (!pl.trackIds.includes(track.id)) {
+          return { ...pl, trackIds: [...pl.trackIds, track.id] };
+        }
+      }
+      return pl;
+    });
+    setPlaylists(updated);
+    localStorage.setItem("xosonic_playlists_data", JSON.stringify(updated));
+    setTrackToAddToPlaylist(null);
+    showToast(`Added to playlist`);
+  };
+
+  const deletePlaylist = (plId: string) => {
+    const updated = playlists.filter((p) => p.id !== plId);
+    setPlaylists(updated);
+    localStorage.setItem("xosonic_playlists_data", JSON.stringify(updated));
+    if (activePlaylistId === plId) setActivePlaylistId(null);
+    showToast("Playlist deleted");
+  };
+
+  // Keyboard Navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return;
@@ -522,18 +540,11 @@ export default function Home() {
   }, [currentTime, duration, isPlaying]);
 
   const formatTime = (secs: number) => {
+    if (isNaN(secs) || secs < 0) return "0:00";
     const m = Math.floor(secs / 60);
     const s = Math.floor(secs % 60);
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
-
-  // Greeting
-  const greeting = useMemo(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
-  }, []);
 
   return (
     <div
@@ -544,7 +555,7 @@ export default function Home() {
       }}
       className="min-h-screen bg-m3-background text-m3-onSurface flex flex-col md:flex-row relative selection:bg-m3-primary/30 selection:text-m3-onPrimaryContainer font-sans"
     >
-      {/* Audio Element */}
+      {/* Real Audio Player Element */}
       <audio
         ref={audioRef}
         crossOrigin="anonymous"
@@ -581,12 +592,19 @@ export default function Home() {
           {/* Logo Header */}
           <div className="flex items-center gap-3 px-2">
             <div className="relative w-10 h-10 rounded-2xl liquid-glass flex items-center justify-center p-1 border border-m3-primary/30 shadow-lg shadow-m3-primary/10">
-              <Image src="/logo.png" alt="Xosonic" width={32} height={32} className="object-contain" priority />
+              <img
+                src="/logo.png"
+                alt="Xosonic"
+                className="w-8 h-8 object-contain"
+                onError={(e) => {
+                  e.currentTarget.src = "/favicon.ico";
+                }}
+              />
             </div>
             <div className="hidden lg:block">
-              <h1 className="text-sm font-extrabold tracking-tight text-white flex items-center gap-1.5">
+              <h1 className="text-sm font-black tracking-tight text-white flex items-center gap-1.5">
                 Xosonic
-                <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-m3-primaryContainer text-m3-onPrimaryContainer">
+                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-m3-primaryContainer text-m3-onPrimaryContainer">
                   XrLabs
                 </span>
               </h1>
@@ -597,10 +615,13 @@ export default function Home() {
           {/* Navigation Links */}
           <nav className="flex flex-col gap-1.5 w-full mt-8">
             <button
-              onClick={() => setCurrentNav("home")}
+              onClick={() => {
+                setCurrentNav("home");
+                setHasSearched(false);
+              }}
               className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl transition ${
-                currentNav === "home"
-                  ? "bg-m3-primaryContainer text-m3-onPrimaryContainer font-semibold"
+                currentNav === "home" && !hasSearched
+                  ? "bg-m3-primaryContainer text-m3-onPrimaryContainer font-bold"
                   : "hover:bg-m3-surfaceContainer text-m3-onSurfaceVariant hover:text-white"
               }`}
             >
@@ -609,10 +630,13 @@ export default function Home() {
             </button>
 
             <button
-              onClick={() => setCurrentNav("discover")}
+              onClick={() => {
+                setCurrentNav("discover");
+                setHasSearched(false);
+              }}
               className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl transition ${
                 currentNav === "discover"
-                  ? "bg-m3-primaryContainer text-m3-onPrimaryContainer font-semibold"
+                  ? "bg-m3-primaryContainer text-m3-onPrimaryContainer font-bold"
                   : "hover:bg-m3-surfaceContainer text-m3-onSurfaceVariant hover:text-white"
               }`}
             >
@@ -621,10 +645,13 @@ export default function Home() {
             </button>
 
             <button
-              onClick={() => setCurrentNav("library")}
+              onClick={() => {
+                setCurrentNav("library");
+                setHasSearched(false);
+              }}
               className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl transition ${
                 currentNav === "library"
-                  ? "bg-m3-primaryContainer text-m3-onPrimaryContainer font-semibold"
+                  ? "bg-m3-primaryContainer text-m3-onPrimaryContainer font-bold"
                   : "hover:bg-m3-surfaceContainer text-m3-onSurfaceVariant hover:text-white"
               }`}
             >
@@ -653,16 +680,16 @@ export default function Home() {
         <div className="flex flex-col gap-2 w-full pt-4 border-t border-white/5">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-3 px-3 py-2 rounded-xl liquid-glass-pill text-xs text-m3-onSurfaceVariant hover:text-white w-full"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl liquid-glass-pill text-xs text-m3-onSurfaceVariant hover:text-white w-full"
             title="Import Local Audio Files"
           >
             <Upload className="w-4 h-4 text-m3-primary" />
-            <span className="hidden lg:block font-medium">Add Local Music</span>
+            <span className="hidden lg:block font-medium">Add Local Files</span>
           </button>
 
           <button
             onClick={() => setShowDownloadsModal(true)}
-            className="flex items-center gap-3 px-3 py-2 rounded-xl bg-m3-primary/10 border border-m3-primary/20 text-xs text-m3-primary hover:bg-m3-primary/20 w-full font-semibold"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-m3-primary/10 border border-m3-primary/20 text-xs text-m3-primary hover:bg-m3-primary/20 w-full font-bold"
           >
             <Download className="w-4 h-4" />
             <span className="hidden lg:block">Apps & Bot</span>
@@ -671,24 +698,24 @@ export default function Home() {
       </aside>
 
       {/* ========================================================= */}
-      {/* 2. MAIN SCROLLABLE DASHBOARD CANVAS                       */}
+      {/* 2. MAIN SCROLLABLE CONTENT AREA                           */}
       {/* ========================================================= */}
-      <main className="flex-1 flex flex-col h-screen overflow-y-auto pb-32">
-        {/* Top Header with Real Search */}
+      <main className="flex-1 flex flex-col h-screen overflow-y-auto pb-36">
+        {/* Top Header with Real Active Presence & Search */}
         <header className="sticky top-0 z-20 liquid-glass border-b border-white/5 px-4 md:px-8 py-3.5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 md:hidden">
-            <Image src="/logo.png" alt="Xosonic" width={28} height={28} />
+            <img src="/logo.png" alt="Xosonic" className="w-7 h-7 object-contain" />
             <span className="font-extrabold text-sm tracking-tight text-white">Xosonic</span>
           </div>
 
-          {/* Interactive Search Bar */}
+          {/* Interactive Instant Search Bar */}
           <div className="flex-1 max-w-xl relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-m3-onSurfaceVariant" />
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Search artists, tracks, or paste song name..."
+              onChange={(e) => handleSearchInput(e.target.value)}
+              placeholder="Search by song, artist, album, or genre..."
               className="w-full pl-10 pr-10 py-2.5 rounded-full bg-m3-surfaceContainer text-xs text-white placeholder-m3-onSurfaceVariant/60 border border-transparent focus:border-m3-primary/50 focus:bg-m3-surfaceContainerHigh focus:outline-none transition"
             />
             {searchQuery && (
@@ -706,22 +733,31 @@ export default function Home() {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* REAL ACTIVE PLAYERS TELEMETRY */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full liquid-glass-pill border border-emerald-500/30 text-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-white font-mono font-bold">{activeListeners}</span>
+              <span className="text-m3-onSurfaceVariant text-[11px] hidden sm:inline">
+                {activeListeners === 1 ? "player active" : "players active"}
+              </span>
+            </div>
+
             <button
               onClick={() => setShowDownloadsModal(true)}
-              className="px-3.5 py-1.5 rounded-full liquid-glass-pill text-xs font-semibold text-m3-primary border border-m3-primary/30 hover:bg-m3-primary/10 transition flex items-center gap-1.5"
+              className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-m3-primary/10 border border-m3-primary/30 text-xs font-semibold text-m3-primary hover:bg-m3-primary/20 transition"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Get APK / IPA</span>
+              <span>Get APK</span>
             </button>
           </div>
         </header>
 
         {/* Content Body */}
         <div className="p-4 md:p-8 space-y-8 max-w-7xl mx-auto w-full">
-          {/* SEARCH RESULTS VIEW (Active when user typed query) */}
+          {/* SEARCH VIEW (Active when user enters search) */}
           {hasSearched ? (
-            <section className="space-y-4">
+            <section className="space-y-4 animate-fadeIn">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -729,20 +765,20 @@ export default function Home() {
                     Search Results for &ldquo;{searchQuery}&rdquo;
                   </h2>
                   <p className="text-xs text-m3-onSurfaceVariant">
-                    {isSearching ? "Searching global audio stream network..." : `${searchResults.length} live tracks found`}
+                    {isSearching ? "Searching audio stream network..." : `${searchResults.length} live tracks found`}
                   </p>
                 </div>
               </div>
 
               {isSearching ? (
-                <div className="py-16 text-center text-xs text-m3-onSurfaceVariant">
+                <div className="py-20 text-center text-xs text-m3-onSurfaceVariant">
                   <div className="w-8 h-8 rounded-full border-2 border-m3-primary border-t-transparent animate-spin mx-auto mb-3" />
-                  Resolving audio streams...
+                  Resolving live audio streams...
                 </div>
               ) : searchResults.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
                   {searchResults.map((track) => {
-                    const isSelected = currentTrack.id === track.id;
+                    const isSelected = currentTrack?.id === track.id;
                     const isFav = favorites.has(track.id);
 
                     return (
@@ -756,12 +792,13 @@ export default function Home() {
                         }`}
                       >
                         <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-m3-surfaceContainer">
-                          <Image
+                          <img
                             src={track.thumbnailUrl || "/logo.png"}
                             alt={track.title}
-                            fill
-                            className="object-cover group-hover:scale-105 transition duration-300"
-                            unoptimized
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                            onError={(e) => {
+                              e.currentTarget.src = "/logo.png";
+                            }}
                           />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                             <Play className="w-5 h-5 text-white fill-white" />
@@ -784,17 +821,17 @@ export default function Home() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              addToQueue(track);
+                              setTrackToAddToPlaylist(track);
                             }}
                             className="p-1.5 rounded-full hover:bg-white/10 text-m3-onSurfaceVariant hover:text-white"
-                            title="Add to Queue"
+                            title="Add to Playlist"
                           >
                             <Plus className="w-4 h-4" />
                           </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              toggleFavorite(track.id);
+                              toggleFavorite(track);
                             }}
                             className="p-1.5 rounded-full hover:bg-white/10"
                             title="Favorite"
@@ -812,93 +849,56 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="p-12 rounded-3xl liquid-glass text-center text-xs text-m3-onSurfaceVariant">
-                  No matching tracks found. Try searching by song title or artist.
+                  No matching tracks found. Try typing a different artist or song name.
                 </div>
               )}
             </section>
-          ) : (
-            /* DEFAULT HOME / DISCOVER VIEW */
-            <>
-              {/* Active Hero Track Card */}
-              <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 liquid-glass border border-m3-primary/20 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="flex items-center gap-5 w-full md:w-auto">
-                  <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden shadow-2xl border border-white/10 flex-shrink-0">
-                    <Image
-                      src={currentTrack.thumbnailUrl || "/logo.png"}
-                      alt={currentTrack.title}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                      priority
-                    />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-m3-primary flex items-center gap-1.5">
-                      <Disc3 className={`w-3.5 h-3.5 ${isPlaying ? "animate-spin" : ""}`} />
-                      Currently Loaded
-                    </span>
-                    <h2 className="text-lg md:text-2xl font-black text-white mt-1 line-clamp-1">
-                      {currentTrack.title}
-                    </h2>
-                    <p className="text-xs md:text-sm text-m3-onSurfaceVariant mt-0.5">
-                      {currentTrack.artist} • {currentTrack.album || "Single"}
-                    </p>
-
-                    <div className="flex items-center gap-3 mt-4">
-                      <button
-                        onClick={togglePlayPause}
-                        className="px-5 py-2 rounded-full bg-m3-primary text-m3-onPrimary font-bold text-xs flex items-center gap-2 hover:scale-105 transition shadow-lg shadow-m3-primary/25"
-                      >
-                        {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
-                        <span>{isPlaying ? "Pause Track" : "Play Now"}</span>
-                      </button>
-
-                      <button
-                        onClick={() => setShowLyricsDrawer(true)}
-                        className="px-4 py-2 rounded-full liquid-glass-pill text-xs font-semibold text-white hover:text-m3-primary transition flex items-center gap-1.5"
-                      >
-                        <ListMusic className="w-3.5 h-3.5" />
-                        <span>Lyrics</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Live Real-time Visualizer Deck */}
-                <div className="w-full md:w-64 flex flex-col items-center justify-center p-4 rounded-2xl bg-m3-surfaceContainer border border-white/5">
-                  <span className="text-[10px] font-semibold text-m3-onSurfaceVariant/80 uppercase tracking-widest mb-2">
-                    Audio Spectrum
-                  </span>
-                  <canvas ref={canvasRef} width={180} height={48} className="w-full h-12" />
-                  <span className="text-[9px] font-mono text-m3-primary/80 mt-1">
-                    {isPlaying ? "Live Signal Active" : "Standby"}
-                  </span>
-                </div>
+          ) : currentNav === "discover" ? (
+            /* DISCOVER VIEW */
+            <section className="space-y-6 animate-fadeIn">
+              <div>
+                <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                  <Flame className="w-6 h-6 text-m3-primary" />
+                  Explore Sound Genres
+                </h2>
+                <p className="text-xs text-m3-onSurfaceVariant mt-0.5">
+                  Curated streams updated live across global sound channels
+                </p>
               </div>
 
-              {/* CURATED TRENDING / QUICK PICKS SHELF */}
-              <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-m3-primary" />
-                      Popular Master Tracks
-                    </h3>
-                    <p className="text-xs text-m3-onSurfaceVariant">
-                      Instant high-fidelity streaming • Click any to play
-                    </p>
-                  </div>
-                </div>
+              {/* Genre Pills */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                {GENRES.map((g) => (
+                  <button
+                    key={g.name}
+                    onClick={() => selectGenre(g.name, g.query)}
+                    className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition ${
+                      selectedGenre === g.name
+                        ? "bg-m3-primary text-m3-onPrimary shadow-lg shadow-m3-primary/20"
+                        : "bg-m3-surfaceContainer hover:bg-m3-surfaceContainerHigh text-m3-onSurfaceVariant hover:text-white"
+                    }`}
+                  >
+                    {g.name}
+                  </button>
+                ))}
+              </div>
 
+              {/* Genre Tracks Grid */}
+              {loadingTracks ? (
+                <div className="py-20 text-center text-xs text-m3-onSurfaceVariant">
+                  <div className="w-8 h-8 rounded-full border-2 border-m3-primary border-t-transparent animate-spin mx-auto mb-3" />
+                  Loading genre tracks...
+                </div>
+              ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
-                  {CURATED_TRACKS.map((track, idx) => {
-                    const isSelected = currentTrack.id === track.id;
+                  {tracks.map((track, idx) => {
+                    const isSelected = currentTrack?.id === track.id;
                     const isFav = favorites.has(track.id);
 
                     return (
                       <div
                         key={track.id}
-                        onClick={() => playTrack(track, CURATED_TRACKS, idx)}
+                        onClick={() => playTrack(track, tracks, idx)}
                         className={`p-3 rounded-2xl liquid-glass-card cursor-pointer group border flex items-center gap-3.5 ${
                           isSelected
                             ? "border-m3-primary/60 bg-m3-surfaceContainerHigh"
@@ -906,12 +906,13 @@ export default function Home() {
                         }`}
                       >
                         <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-m3-surfaceContainer">
-                          <Image
+                          <img
                             src={track.thumbnailUrl || "/logo.png"}
                             alt={track.title}
-                            fill
-                            className="object-cover group-hover:scale-105 transition duration-300"
-                            unoptimized
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                            onError={(e) => {
+                              e.currentTarget.src = "/logo.png";
+                            }}
                           />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                             <Play className="w-5 h-5 text-white fill-white" />
@@ -930,90 +931,355 @@ export default function Home() {
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              addToQueue(track);
-                            }}
-                            className="p-1.5 rounded-full hover:bg-white/10 text-m3-onSurfaceVariant hover:text-white"
-                            title="Add to Queue"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleFavorite(track.id);
-                            }}
-                            className="p-1.5 rounded-full hover:bg-white/10"
-                            title="Favorite"
-                          >
-                            <Heart
-                              className={`w-4 h-4 ${
-                                isFav ? "text-m3-favorite fill-m3-favorite" : "text-m3-onSurfaceVariant"
-                              }`}
-                            />
-                          </button>
-                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(track);
+                          }}
+                          className="p-1.5 rounded-full hover:bg-white/10"
+                        >
+                          <Heart
+                            className={`w-4 h-4 ${
+                              isFav ? "text-m3-favorite fill-m3-favorite" : "text-m3-onSurfaceVariant"
+                            }`}
+                          />
+                        </button>
                       </div>
                     );
                   })}
                 </div>
-              </section>
+              )}
+            </section>
+          ) : currentNav === "library" ? (
+            /* LIBRARY VIEW */
+            <section className="space-y-6 animate-fadeIn">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                    <LibraryIcon className="w-6 h-6 text-m3-primary" />
+                    My Sound Library
+                  </h2>
+                  <p className="text-xs text-m3-onSurfaceVariant mt-0.5">
+                    Your saved favorites, custom playlists, and local files
+                  </p>
+                </div>
 
-              {/* LOCAL AUDIO DROPZONE / LIBRARY */}
+                <button
+                  onClick={() => setShowCreatePlaylistModal(true)}
+                  className="px-4 py-2 rounded-full bg-m3-primary text-m3-onPrimary text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-m3-primary/20 hover:scale-105 transition"
+                >
+                  <FolderPlus className="w-4 h-4" />
+                  <span>New Playlist</span>
+                </button>
+              </div>
+
+              {/* Library Navigation Tabs */}
+              <div className="flex items-center gap-3 border-b border-white/5 pb-2">
+                <button
+                  onClick={() => setLibraryTab("favorites")}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${
+                    libraryTab === "favorites"
+                      ? "bg-m3-primary text-m3-onPrimary"
+                      : "text-m3-onSurfaceVariant hover:text-white"
+                  }`}
+                >
+                  Liked Songs ({favorites.size})
+                </button>
+                <button
+                  onClick={() => setLibraryTab("playlists")}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${
+                    libraryTab === "playlists"
+                      ? "bg-m3-primary text-m3-onPrimary"
+                      : "text-m3-onSurfaceVariant hover:text-white"
+                  }`}
+                >
+                  Playlists ({playlists.length})
+                </button>
+                <button
+                  onClick={() => setLibraryTab("local")}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${
+                    libraryTab === "local"
+                      ? "bg-m3-primary text-m3-onPrimary"
+                      : "text-m3-onSurfaceVariant hover:text-white"
+                  }`}
+                >
+                  Local Audio ({localTracks.length})
+                </button>
+              </div>
+
+              {/* LIKED SONGS TAB */}
+              {libraryTab === "favorites" && (
+                <div>
+                  {favorites.size > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+                      {Array.from(favorites.values()).map((track) => (
+                        <div
+                          key={track.id}
+                          onClick={() => playTrack(track, Array.from(favorites.values()))}
+                          className="p-3 rounded-2xl liquid-glass-card border border-white/5 hover:border-m3-primary/30 flex items-center gap-3.5 cursor-pointer group"
+                        >
+                          <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-m3-surfaceContainer">
+                            <img
+                              src={track.thumbnailUrl || "/logo.png"}
+                              alt={track.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition"
+                              onError={(e) => {
+                                e.currentTarget.src = "/logo.png";
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                              <Play className="w-5 h-5 text-white fill-white" />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-xs font-bold text-white truncate">{track.title}</h4>
+                            <p className="text-[11px] text-m3-onSurfaceVariant truncate mt-0.5">{track.artist}</p>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite(track);
+                            }}
+                            className="p-1.5 text-m3-favorite"
+                          >
+                            <Heart className="w-4 h-4 fill-current" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-16 rounded-3xl liquid-glass text-center text-xs text-m3-onSurfaceVariant">
+                      <Heart className="w-8 h-8 text-m3-favorite mx-auto mb-2 opacity-60" />
+                      No liked songs yet. Tap the heart on any track to save it here!
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* PLAYLISTS TAB */}
+              {libraryTab === "playlists" && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {playlists.map((pl) => (
+                      <div
+                        key={pl.id}
+                        className="p-5 rounded-2xl liquid-glass border border-white/5 hover:border-m3-primary/30 flex flex-col justify-between space-y-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="w-10 h-10 rounded-xl bg-m3-primaryContainer text-m3-onPrimaryContainer flex items-center justify-center">
+                            <ListMusic className="w-5 h-5" />
+                          </div>
+                          <button
+                            onClick={() => deletePlaylist(pl.id)}
+                            className="p-1.5 text-white/40 hover:text-rose-400 transition"
+                            title="Delete Playlist"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-white">{pl.name}</h4>
+                          <p className="text-xs text-m3-onSurfaceVariant mt-0.5">
+                            {pl.trackIds.length} track(s)
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* LOCAL AUDIO TAB */}
+              {libraryTab === "local" && (
+                <div className="space-y-4">
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-10 border-2 border-dashed border-m3-primary/30 hover:border-m3-primary/60 rounded-3xl liquid-glass text-center cursor-pointer transition group"
+                  >
+                    <Upload className="w-8 h-8 text-m3-primary mx-auto mb-2 group-hover:scale-110 transition" />
+                    <h4 className="text-sm font-bold text-white">Click or drag local files here</h4>
+                    <p className="text-xs text-m3-onSurfaceVariant mt-1">
+                      Full in-browser audio playback for .mp3, .wav, .flac, .m4a.
+                    </p>
+                  </div>
+
+                  {localTracks.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {localTracks.map((track) => (
+                        <div
+                          key={track.id}
+                          onClick={() => playTrack(track)}
+                          className="p-3 rounded-2xl liquid-glass-card border border-white/5 hover:border-m3-primary/30 flex items-center justify-between cursor-pointer"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-xl bg-m3-primaryContainer text-m3-onPrimaryContainer flex items-center justify-center flex-shrink-0">
+                              <Music className="w-5 h-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="text-xs font-bold text-white truncate">{track.title}</h4>
+                              <p className="text-[10px] text-m3-onSurfaceVariant">Local File</p>
+                            </div>
+                          </div>
+                          <Play className="w-4 h-4 text-m3-primary flex-shrink-0" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+          ) : (
+            /* DEFAULT HOME VIEW */
+            <>
+              {/* Active Hero Track Card */}
+              {currentTrack && (
+                <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 liquid-glass border border-m3-primary/25 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6 animate-fadeIn">
+                  <div className="flex items-center gap-5 w-full md:w-auto">
+                    <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden shadow-2xl border border-white/10 flex-shrink-0 bg-m3-surfaceContainer">
+                      <img
+                        src={currentTrack.thumbnailUrl || "/logo.png"}
+                        alt={currentTrack.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/logo.png";
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-m3-primary flex items-center gap-1.5">
+                        <Disc3 className={`w-3.5 h-3.5 ${isPlaying ? "animate-spin" : ""}`} />
+                        Now Loaded
+                      </span>
+                      <h2 className="text-lg md:text-2xl font-black text-white mt-1 line-clamp-1">
+                        {currentTrack.title}
+                      </h2>
+                      <p className="text-xs md:text-sm text-m3-onSurfaceVariant mt-0.5">
+                        {currentTrack.artist} • {currentTrack.album || "Single"}
+                      </p>
+
+                      <div className="flex items-center gap-3 mt-4">
+                        <button
+                          onClick={togglePlayPause}
+                          className="px-5 py-2 rounded-full bg-m3-primary text-m3-onPrimary font-bold text-xs flex items-center gap-2 hover:scale-105 transition shadow-lg shadow-m3-primary/25"
+                        >
+                          {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
+                          <span>{isPlaying ? "Pause Track" : "Play Now"}</span>
+                        </button>
+
+                        <button
+                          onClick={() => setShowLyricsDrawer(true)}
+                          className="px-4 py-2 rounded-full liquid-glass-pill text-xs font-semibold text-white hover:text-m3-primary transition flex items-center gap-1.5"
+                        >
+                          <ListMusic className="w-3.5 h-3.5" />
+                          <span>Lyrics</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Real Audio Spectrum Visualizer */}
+                  <div className="w-full md:w-64 flex flex-col items-center justify-center p-4 rounded-2xl bg-m3-surfaceContainer border border-white/5">
+                    <span className="text-[10px] font-semibold text-m3-onSurfaceVariant/80 uppercase tracking-widest mb-2">
+                      Live Audio Spectrum
+                    </span>
+                    <canvas ref={canvasRef} width={180} height={48} className="w-full h-12" />
+                    <span className="text-[9px] font-mono text-m3-primary/80 mt-1">
+                      {isPlaying ? "Audio Signal Active" : "Paused / Ready"}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* CURATED POPULAR MASTER TRACKS */}
               <section className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <FileAudio className="w-4 h-4 text-m3-primary" />
-                      Local Music Library
+                      <Sparkles className="w-4 h-4 text-m3-primary" />
+                      Trending Sound Records
                     </h3>
                     <p className="text-xs text-m3-onSurfaceVariant">
-                      Play your own files directly without uploading to external servers
+                      Instant audio streaming with high-res artwork • Click to play
                     </p>
                   </div>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-3.5 py-1.5 rounded-full liquid-glass-pill text-xs font-semibold text-white hover:text-m3-primary transition flex items-center gap-1.5"
-                  >
-                    <Upload className="w-3.5 h-3.5 text-m3-primary" />
-                    <span>Browse Files</span>
-                  </button>
                 </div>
 
-                {localTracks.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {localTracks.map((track) => (
-                      <div
-                        key={track.id}
-                        onClick={() => playTrack(track)}
-                        className="p-3 rounded-2xl liquid-glass-card border border-white/5 hover:border-m3-primary/30 flex items-center justify-between cursor-pointer"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-xl bg-m3-primaryContainer text-m3-onPrimaryContainer flex items-center justify-center flex-shrink-0">
-                            <Music className="w-5 h-5" />
-                          </div>
-                          <div className="min-w-0">
-                            <h4 className="text-xs font-bold text-white truncate">{track.title}</h4>
-                            <p className="text-[10px] text-m3-onSurfaceVariant">Local File</p>
-                          </div>
-                        </div>
-                        <Play className="w-4 h-4 text-m3-primary flex-shrink-0" />
-                      </div>
-                    ))}
+                {loadingTracks ? (
+                  <div className="py-20 text-center text-xs text-m3-onSurfaceVariant">
+                    <div className="w-8 h-8 rounded-full border-2 border-m3-primary border-t-transparent animate-spin mx-auto mb-3" />
+                    Loading fresh tracks...
                   </div>
                 ) : (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-8 border-2 border-dashed border-m3-primary/20 hover:border-m3-primary/50 rounded-3xl liquid-glass text-center cursor-pointer transition"
-                  >
-                    <Upload className="w-8 h-8 text-m3-primary mx-auto mb-2 opacity-80" />
-                    <h4 className="text-sm font-bold text-white">Drag & drop your audio files here</h4>
-                    <p className="text-xs text-m3-onSurfaceVariant mt-1">
-                      Supports .mp3, .wav, .flac, .m4a. 100% offline and in-browser playback.
-                    </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+                    {tracks.map((track, idx) => {
+                      const isSelected = currentTrack?.id === track.id;
+                      const isFav = favorites.has(track.id);
+
+                      return (
+                        <div
+                          key={track.id}
+                          onClick={() => playTrack(track, tracks, idx)}
+                          className={`p-3 rounded-2xl liquid-glass-card cursor-pointer group border flex items-center gap-3.5 ${
+                            isSelected
+                              ? "border-m3-primary/60 bg-m3-surfaceContainerHigh"
+                              : "border-white/5 hover:border-m3-primary/30"
+                          }`}
+                        >
+                          <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-m3-surfaceContainer">
+                            <img
+                              src={track.thumbnailUrl || "/logo.png"}
+                              alt={track.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                              onError={(e) => {
+                                e.currentTarget.src = "/logo.png";
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                              <Play className="w-5 h-5 text-white fill-white" />
+                            </div>
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <h4 className={`text-xs font-bold truncate ${isSelected ? "text-m3-primary" : "text-white"}`}>
+                              {track.title}
+                            </h4>
+                            <p className="text-[11px] text-m3-onSurfaceVariant truncate mt-0.5">
+                              {track.artist}
+                            </p>
+                            <span className="text-[10px] text-m3-onSurfaceVariant/60 font-mono">
+                              {formatTime(track.durationSeconds)}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTrackToAddToPlaylist(track);
+                              }}
+                              className="p-1.5 rounded-full hover:bg-white/10 text-m3-onSurfaceVariant hover:text-white"
+                              title="Add to Playlist"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFavorite(track);
+                              }}
+                              className="p-1.5 rounded-full hover:bg-white/10"
+                              title="Favorite"
+                            >
+                              <Heart
+                                className={`w-4 h-4 ${
+                                  isFav ? "text-m3-favorite fill-m3-favorite" : "text-m3-onSurfaceVariant"
+                                }`}
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </section>
@@ -1023,11 +1289,11 @@ export default function Home() {
       </main>
 
       {/* ========================================================= */}
-      {/* 3. FLOATING HI-FI CONSOLE (Tactile Bottom Dock)           */}
+      {/* 3. FLOATING HI-FI BOTTOM CONSOLE (Working Audio Deck)     */}
       {/* ========================================================= */}
       <footer className="fixed bottom-0 left-0 right-0 z-40 liquid-glass border-t border-white/10 px-4 py-2.5 backdrop-blur-3xl shadow-2xl">
         <div className="max-w-7xl mx-auto flex flex-col gap-1.5">
-          {/* Scrubber Progress Bar */}
+          {/* Audio Scrubber Progress Line */}
           <div className="flex items-center gap-3 w-full">
             <span className="text-[10px] font-mono text-m3-onSurfaceVariant w-8 text-right">
               {formatTime(currentTime)}
@@ -1048,30 +1314,35 @@ export default function Home() {
           <div className="flex items-center justify-between gap-4">
             {/* Track Info */}
             <div className="flex items-center gap-3 min-w-0 w-1/3">
-              <div className="relative w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-m3-surfaceContainer">
-                <Image
-                  src={currentTrack.thumbnailUrl || "/logo.png"}
-                  alt={currentTrack.title}
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              </div>
-              <div className="min-w-0">
-                <h4 className="text-xs font-bold text-white truncate">{currentTrack.title}</h4>
-                <p className="text-[11px] text-m3-onSurfaceVariant truncate">{currentTrack.artist}</p>
-              </div>
-              <button
-                onClick={() => toggleFavorite(currentTrack.id)}
-                className="hidden sm:block p-1.5 rounded-full hover:bg-white/10 text-m3-onSurfaceVariant"
-                title="Favorite"
-              >
-                <Heart
-                  className={`w-4 h-4 ${
-                    favorites.has(currentTrack.id) ? "text-m3-favorite fill-m3-favorite" : ""
-                  }`}
-                />
-              </button>
+              {currentTrack && (
+                <>
+                  <div className="relative w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-m3-surfaceContainer">
+                    <img
+                      src={currentTrack.thumbnailUrl || "/logo.png"}
+                      alt={currentTrack.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = "/logo.png";
+                      }}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-bold text-white truncate">{currentTrack.title}</h4>
+                    <p className="text-[11px] text-m3-onSurfaceVariant truncate">{currentTrack.artist}</p>
+                  </div>
+                  <button
+                    onClick={() => toggleFavorite(currentTrack)}
+                    className="hidden sm:block p-1.5 rounded-full hover:bg-white/10 text-m3-onSurfaceVariant"
+                    title="Favorite"
+                  >
+                    <Heart
+                      className={`w-4 h-4 ${
+                        favorites.has(currentTrack.id) ? "text-m3-favorite fill-m3-favorite" : ""
+                      }`}
+                    />
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Central Controls */}
@@ -1218,7 +1489,7 @@ export default function Home() {
               })
             ) : (
               <p className="text-xs text-m3-onSurfaceVariant text-center py-8">
-                No synced lyrics found for &ldquo;{currentTrack.title}&rdquo;.
+                No synced lyrics found for &ldquo;{currentTrack?.title}&rdquo;.
               </p>
             )}
           </div>
@@ -1239,7 +1510,9 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setQueue([currentTrack])}
+                onClick={() => {
+                  if (currentTrack) setQueue([currentTrack]);
+                }}
                 className="text-[10px] text-m3-onSurfaceVariant hover:text-rose-400 font-semibold"
               >
                 Clear
@@ -1294,14 +1567,100 @@ export default function Home() {
       )}
 
       {/* ========================================================= */}
-      {/* 6. ECOSYSTEM DOWNLOADS MODAL                              */}
+      {/* 6. ADD TO PLAYLIST MODAL                                  */}
+      {/* ========================================================= */}
+      {trackToAddToPlaylist && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="liquid-glass rounded-3xl max-w-sm w-full p-6 border border-m3-primary/30 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-bold text-white">Add to Playlist</h4>
+              <button
+                onClick={() => setTrackToAddToPlaylist(null)}
+                className="text-m3-onSurfaceVariant hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-m3-onSurfaceVariant">
+              Select a playlist for &ldquo;{trackToAddToPlaylist.title}&rdquo;
+            </p>
+
+            <div className="space-y-2 max-h-48 overflow-y-auto no-scrollbar">
+              {playlists.map((pl) => (
+                <button
+                  key={pl.id}
+                  onClick={() => addTrackToPlaylist(pl.id, trackToAddToPlaylist)}
+                  className="w-full p-3 rounded-xl bg-m3-surfaceContainer hover:bg-m3-surfaceContainerHigh text-left text-xs font-semibold text-white flex items-center justify-between transition"
+                >
+                  <span>{pl.name}</span>
+                  <Plus className="w-3.5 h-3.5 text-m3-primary" />
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => {
+                setShowCreatePlaylistModal(true);
+              }}
+              className="w-full py-2.5 rounded-xl border border-dashed border-m3-primary/30 text-xs font-semibold text-m3-primary hover:bg-m3-primary/10 transition"
+            >
+              + Create New Playlist
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 7. CREATE PLAYLIST MODAL                                  */}
+      {/* ========================================================= */}
+      {showCreatePlaylistModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="liquid-glass rounded-3xl max-w-sm w-full p-6 border border-m3-primary/30 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-bold text-white">Create New Playlist</h4>
+              <button
+                onClick={() => setShowCreatePlaylistModal(false)}
+                className="text-m3-onSurfaceVariant hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <input
+              type="text"
+              value={newPlaylistTitle}
+              onChange={(e) => setNewPlaylistTitle(e.target.value)}
+              placeholder="Playlist title (e.g., Midnight Vibes)"
+              className="w-full px-4 py-2.5 rounded-xl bg-m3-surfaceContainer text-xs text-white placeholder-m3-onSurfaceVariant/60 border border-white/10 focus:border-m3-primary focus:outline-none"
+            />
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowCreatePlaylistModal(false)}
+                className="flex-1 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-white transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={createPlaylist}
+                className="flex-1 py-2 rounded-xl bg-m3-primary hover:bg-m3-primary/90 text-xs font-bold text-m3-onPrimary transition"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 8. ECOSYSTEM DOWNLOADS MODAL                              */}
       {/* ========================================================= */}
       {showDownloadsModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="liquid-glass rounded-3xl max-w-lg w-full p-6 md:p-8 border border-m3-primary/30 shadow-2xl relative">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <Image src="/logo.png" alt="Xosonic" width={32} height={32} />
+                <img src="/logo.png" alt="Xosonic" className="w-8 h-8 object-contain" />
                 <h3 className="text-base font-bold text-white">Download Xosonic Builds</h3>
               </div>
               <button
