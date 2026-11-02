@@ -32,7 +32,8 @@ import {
   Bot,
   Flame,
   Check,
-  FolderPlus
+  FolderPlus,
+  Video
 } from "lucide-react";
 import type { Track, LyricLine, Playlist } from "@/types";
 
@@ -178,6 +179,10 @@ export default function Home() {
   const [showDownloadsModal, setShowDownloadsModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const [showVideo, setShowVideo] = useState(false);
+  const pendingTrackRef = useRef<Track | null>(null);
+  const handleNextRef = useRef<() => void>(() => {});
+
   // Refs
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -239,21 +244,27 @@ export default function Home() {
     const initYT = () => {
       if (window.YT && window.YT.Player && !ytPlayerRef.current) {
         ytPlayerRef.current = new window.YT.Player("youtube-player-container", {
-          height: "200",
-          width: "200",
-          videoId: CURATED_FULL_TRACKS[0].id,
+          height: "100%",
+          width: "100%",
+          videoId: pendingTrackRef.current?.id || CURATED_FULL_TRACKS[0].id,
           playerVars: {
-            autoplay: 0,
-            controls: 0,
-            disablekb: 1,
-            fs: 0,
+            autoplay: pendingTrackRef.current ? 1 : 0,
+            controls: 1,
+            disablekb: 0,
+            fs: 1,
             playsinline: 1,
             rel: 0,
             modestbranding: 1,
           },
           events: {
-            onReady: () => {
+            onReady: (event: any) => {
               setIsYTReady(true);
+              if (pendingTrackRef.current) {
+                event.target.loadVideoById(pendingTrackRef.current.id);
+                event.target.playVideo();
+                setIsPlaying(true);
+                pendingTrackRef.current = null;
+              }
             },
             onStateChange: (event: any) => {
               if (event.data === window.YT.PlayerState.PLAYING) {
@@ -261,8 +272,13 @@ export default function Home() {
               } else if (event.data === window.YT.PlayerState.PAUSED) {
                 setIsPlaying(false);
               } else if (event.data === window.YT.PlayerState.ENDED) {
-                handleNext();
+                handleNextRef.current?.();
               }
+            },
+            onError: (event: any) => {
+              console.warn("YouTube player error:", event.data);
+              showToast("Track unavailable, skipping to next track");
+              handleNextRef.current?.();
             },
           },
         });
@@ -355,6 +371,8 @@ export default function Home() {
         ytPlayerRef.current.loadVideoById(track.id);
         ytPlayerRef.current.playVideo();
         setIsPlaying(true);
+      } else {
+        pendingTrackRef.current = track;
       }
     }
 
@@ -402,6 +420,10 @@ export default function Home() {
     playTrack(queue[nextIndex]);
   }, [queue, queueIndex, repeatMode, playTrack]);
 
+  useEffect(() => {
+    handleNextRef.current = handleNext;
+  }, [handleNext]);
+
   const handlePrev = useCallback(() => {
     if (currentTime > 3) {
       seek(0);
@@ -411,6 +433,36 @@ export default function Home() {
     setQueueIndex(prevIndex);
     playTrack(queue[prevIndex]);
   }, [currentTime, queue, queueIndex, playTrack]);
+
+  // Global Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+        return;
+      }
+
+      if (e.code === "Space") {
+        e.preventDefault();
+        togglePlayPause();
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        seek(Math.min(duration, currentTime + 5));
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        seek(Math.max(0, currentTime - 5));
+      } else if (e.key === "l" || e.key === "L") {
+        setShowLyricsDrawer((prev) => !prev);
+      } else if (e.key === "v" || e.key === "V") {
+        setShowVideo((prev) => !prev);
+      } else if (e.key === "m" || e.key === "M") {
+        toggleMute();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isPlaying, currentTime, duration, isMuted, volume]);
 
   const seek = (time: number) => {
     setCurrentTime(time);
@@ -678,9 +730,29 @@ export default function Home() {
       }}
       className="min-h-screen bg-m3-background text-m3-onSurface flex flex-col md:flex-row relative selection:bg-m3-primary/30 selection:text-m3-onPrimaryContainer font-sans"
     >
-      {/* Hidden Mobile-Friendly YouTube Player Container */}
-      <div className="fixed -bottom-96 -right-96 w-48 h-48 opacity-0 pointer-events-none overflow-hidden z-[-10]">
-        <div id="youtube-player-container" />
+      {/* Dynamic Video / Background Audio Container */}
+      <div
+        className={`fixed z-50 transition-all duration-300 ${
+          showVideo
+            ? "bottom-24 right-4 sm:right-6 w-80 h-48 sm:w-96 sm:h-56 rounded-2xl overflow-hidden shadow-2xl border border-white/20 bg-black/95 pointer-events-auto"
+            : "bottom-1 right-1 w-2 h-2 opacity-[0.02] pointer-events-none overflow-hidden z-0"
+        }`}
+      >
+        {showVideo && (
+          <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
+            <span className="text-[10px] font-mono bg-black/75 px-2 py-0.5 rounded-full text-white/90 backdrop-blur-md">
+              Live Video Stream
+            </span>
+            <button
+              onClick={() => setShowVideo(false)}
+              className="p-1.5 rounded-full bg-black/75 hover:bg-black/95 text-white backdrop-blur-md transition"
+              title="Minimize to Audio"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+        <div id="youtube-player-container" className="w-full h-full" />
       </div>
 
       {/* Real HTML5 Audio Player for Local Files */}
@@ -1522,8 +1594,18 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Right Tools (Volume, Lyrics, Queue) */}
+            {/* Right Tools (Volume, Video, Lyrics, Queue) */}
             <div className="flex items-center justify-end gap-2 w-1/3">
+              <button
+                onClick={() => setShowVideo((prev) => !prev)}
+                className={`p-2 rounded-xl transition ${
+                  showVideo ? "bg-m3-primary text-m3-onPrimary" : "hover:bg-white/10 text-m3-onSurfaceVariant"
+                }`}
+                title="Toggle Music Video (V)"
+              >
+                <Video className="w-4 h-4" />
+              </button>
+
               <button
                 onClick={() => setShowLyricsDrawer((prev) => !prev)}
                 className={`p-2 rounded-xl transition ${
