@@ -32,11 +32,92 @@ import {
   Bot,
   Flame,
   Check,
-  FolderPlus,
-  Headphones,
-  Sliders
+  FolderPlus
 } from "lucide-react";
 import type { Track, LyricLine, Playlist } from "@/types";
+
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: () => void;
+  }
+}
+
+// Curated full-length master tracks with verified IDs & high-res artwork
+const CURATED_FULL_TRACKS: Track[] = [
+  {
+    id: "6uaq8GJJxAQ",
+    title: "SugarCrash! (Official Video)",
+    artist: "ElyOtto",
+    album: "Full Track",
+    durationSeconds: 81,
+    thumbnailUrl: "https://i.ytimg.com/vi/6uaq8GJJxAQ/hqdefault.jpg",
+    source: "youtube",
+  },
+  {
+    id: "fJ9rUzIMcZQ",
+    title: "Bohemian Rhapsody",
+    artist: "Queen",
+    album: "A Night At The Opera",
+    durationSeconds: 355,
+    thumbnailUrl: "https://i.ytimg.com/vi/fJ9rUzIMcZQ/hqdefault.jpg",
+    source: "youtube",
+  },
+  {
+    id: "4NRXx6U8ABQ",
+    title: "Blinding Lights",
+    artist: "The Weeknd",
+    album: "After Hours",
+    durationSeconds: 260,
+    thumbnailUrl: "https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg",
+    source: "youtube",
+  },
+  {
+    id: "Zi_XLOBDo_Y",
+    title: "Billie Jean",
+    artist: "Michael Jackson",
+    album: "Thriller",
+    durationSeconds: 295,
+    thumbnailUrl: "https://i.ytimg.com/vi/Zi_XLOBDo_Y/hqdefault.jpg",
+    source: "youtube",
+  },
+  {
+    id: "5NV6Rdv1a3I",
+    title: "Get Lucky",
+    artist: "Daft Punk ft. Pharrell Williams",
+    album: "Random Access Memories",
+    durationSeconds: 248,
+    thumbnailUrl: "https://i.ytimg.com/vi/5NV6Rdv1a3I/hqdefault.jpg",
+    source: "youtube",
+  },
+  {
+    id: "TUVcZfQe-Kw",
+    title: "Levitating",
+    artist: "Dua Lipa",
+    album: "Future Nostalgia",
+    durationSeconds: 203,
+    thumbnailUrl: "https://i.ytimg.com/vi/TUVcZfQe-Kw/hqdefault.jpg",
+    source: "youtube",
+  },
+  {
+    id: "dvgZkm1xWPE",
+    title: "Viva La Vida",
+    artist: "Coldplay",
+    album: "Viva La Vida",
+    durationSeconds: 242,
+    thumbnailUrl: "https://i.ytimg.com/vi/dvgZkm1xWPE/hqdefault.jpg",
+    source: "youtube",
+  },
+  {
+    id: "7wtfhZwyrcc",
+    title: "Believer",
+    artist: "Imagine Dragons",
+    album: "Evolve",
+    durationSeconds: 216,
+    thumbnailUrl: "https://i.ytimg.com/vi/7wtfhZwyrcc/hqdefault.jpg",
+    source: "youtube",
+  },
+];
 
 const GENRES = [
   { name: "Top Hits", query: "pop hits 2024" },
@@ -48,37 +129,36 @@ const GENRES = [
 ];
 
 export default function Home() {
-  // Navigation: 'home' | 'discover' | 'library'
+  // Navigation
   const [currentNav, setCurrentNav] = useState<"home" | "discover" | "library">("home");
   const [libraryTab, setLibraryTab] = useState<"favorites" | "playlists" | "local">("favorites");
   const [selectedGenre, setSelectedGenre] = useState(GENRES[0].name);
 
   // Tracks & Playback State
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [loadingTracks, setLoadingTracks] = useState(true);
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+  const [tracks, setTracks] = useState<Track[]>(CURATED_FULL_TRACKS);
+  const [loadingTracks, setLoadingTracks] = useState(false);
+  const [currentTrack, setCurrentTrack] = useState<Track>(CURATED_FULL_TRACKS[0]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [duration, setDuration] = useState(CURATED_FULL_TRACKS[0].durationSeconds);
   const [volume, setVolume] = useState(0.85);
   const [isMuted, setIsMuted] = useState(false);
   const [repeatMode, setRepeatMode] = useState<"off" | "all" | "one">("all");
   const [isShuffle, setIsShuffle] = useState(false);
 
   // Play Queue
-  const [queue, setQueue] = useState<Track[]>([]);
+  const [queue, setQueue] = useState<Track[]>(CURATED_FULL_TRACKS);
   const [queueIndex, setQueueIndex] = useState(0);
   const [showQueueDrawer, setShowQueueDrawer] = useState(false);
 
-  // Live Multi-Source Search
+  // Live Search
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Track[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
-  // Real Active Presence / Listeners
+  // Real Active Presence
   const [activeListeners, setActiveListeners] = useState(1);
-  const [totalConnected, setTotalConnected] = useState(1);
   const clientIdRef = useRef<string>("");
 
   // Synced Lyrics
@@ -90,7 +170,6 @@ export default function Home() {
   const [favorites, setFavorites] = useState<Map<string, Track>>(new Map());
   const [localTracks, setLocalTracks] = useState<Track[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
-  const [activePlaylistId, setActivePlaylistId] = useState<string | null>(null);
   const [newPlaylistTitle, setNewPlaylistTitle] = useState("");
   const [showCreatePlaylistModal, setShowCreatePlaylistModal] = useState(false);
   const [trackToAddToPlaylist, setTrackToAddToPlaylist] = useState<Track | null>(null);
@@ -99,21 +178,22 @@ export default function Home() {
   const [showDownloadsModal, setShowDownloadsModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Audio & Canvas Refs
+  // Refs
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const activeLyricRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const ytPlayerRef = useRef<any>(null);
+  const [isYTReady, setIsYTReady] = useState(false);
 
-  // Toast Helper
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 2500);
   };
 
-  // 1. Initialize Client ID & Load LocalStorage
+  // 1. Initialize Client & Storage
   useEffect(() => {
     if (typeof window !== "undefined") {
       let cid = sessionStorage.getItem("xosonic_client_id");
@@ -123,7 +203,6 @@ export default function Home() {
       }
       clientIdRef.current = cid;
 
-      // Load favorites
       try {
         const savedFavs = localStorage.getItem("xosonic_favorites_data");
         if (savedFavs) {
@@ -134,13 +213,11 @@ export default function Home() {
         }
       } catch {}
 
-      // Load playlists
       try {
         const savedPlaylists = localStorage.getItem("xosonic_playlists_data");
         if (savedPlaylists) {
           setPlaylists(JSON.parse(savedPlaylists));
         } else {
-          // Starter playlist
           const starter: Playlist = {
             id: "starter_vibes",
             name: "Cyber Vibes",
@@ -155,7 +232,55 @@ export default function Home() {
     }
   }, []);
 
-  // 2. Real Presence Heartbeat Hook
+  // 2. Setup Full-Length YouTube Audio Engine
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const initYT = () => {
+      if (window.YT && window.YT.Player && !ytPlayerRef.current) {
+        ytPlayerRef.current = new window.YT.Player("youtube-player-container", {
+          height: "200",
+          width: "200",
+          videoId: CURATED_FULL_TRACKS[0].id,
+          playerVars: {
+            autoplay: 0,
+            controls: 0,
+            disablekb: 1,
+            fs: 0,
+            playsinline: 1,
+            rel: 0,
+            modestbranding: 1,
+          },
+          events: {
+            onReady: () => {
+              setIsYTReady(true);
+            },
+            onStateChange: (event: any) => {
+              if (event.data === window.YT.PlayerState.PLAYING) {
+                setIsPlaying(true);
+              } else if (event.data === window.YT.PlayerState.PAUSED) {
+                setIsPlaying(false);
+              } else if (event.data === window.YT.PlayerState.ENDED) {
+                handleNext();
+              }
+            },
+          },
+        });
+      }
+    };
+
+    window.onYouTubeIframeAPIReady = initYT;
+    if (window.YT && window.YT.Player) {
+      initYT();
+    } else {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName("script")[0];
+      firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
+    }
+  }, []);
+
+  // 3. Real Presence Heartbeat
   useEffect(() => {
     const sendPresence = async () => {
       if (!clientIdRef.current) return;
@@ -173,7 +298,6 @@ export default function Home() {
         if (res.ok) {
           const data = await res.json();
           if (data.activeListeners !== undefined) setActiveListeners(data.activeListeners);
-          if (data.totalConnected !== undefined) setTotalConnected(data.totalConnected);
         }
       } catch {}
     };
@@ -183,97 +307,85 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [isPlaying, currentTrack]);
 
-  // 3. Load Fresh Live Curated Tracks on Startup
+  // 4. Scrubber & Time Sync Loop (Full Length)
   useEffect(() => {
-    const loadInitialTracks = async () => {
-      setLoadingTracks(true);
-      try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(GENRES[0].query)}`);
-        const data = await res.json();
-        if (data.tracks && data.tracks.length > 0) {
-          setTracks(data.tracks);
-          setQueue(data.tracks);
-          setCurrentTrack(data.tracks[0]);
-          setDuration(data.tracks[0].durationSeconds || 180);
+    if (!isPlaying) return;
+    const interval = setInterval(() => {
+      if (currentTrack?.isLocal) {
+        if (audioRef.current) {
+          setCurrentTime(audioRef.current.currentTime);
+          setDuration(audioRef.current.duration || 0);
         }
-      } catch (err) {
-        console.error("Failed to load starter tracks", err);
-      } finally {
-        setLoadingTracks(false);
+      } else if (ytPlayerRef.current && typeof ytPlayerRef.current.getCurrentTime === "function") {
+        try {
+          const curr = ytPlayerRef.current.getCurrentTime() || 0;
+          const dur = ytPlayerRef.current.getDuration() || currentTrack?.durationSeconds || 0;
+          setCurrentTime(curr);
+          if (dur > 0) setDuration(dur);
+        } catch {}
       }
-    };
-    loadInitialTracks();
-  }, []);
+    }, 500);
 
-  // 4. Live Genre Change
-  const selectGenre = async (genreName: string, query: string) => {
-    setSelectedGenre(genreName);
-    setLoadingTracks(true);
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-      const data = await res.json();
-      if (data.tracks && data.tracks.length > 0) {
-        setTracks(data.tracks);
-        setQueue(data.tracks);
-        setQueueIndex(0);
-      }
-    } catch {} finally {
-      setLoadingTracks(false);
-    }
-  };
+    return () => clearInterval(interval);
+  }, [isPlaying, currentTrack]);
 
-  // 5. Playback Controller
+  // 5. Playback Controller (Full Song)
   const playTrack = useCallback(async (track: Track, newQueue?: Track[], index?: number) => {
     setCurrentTrack(track);
-    setIsPlaying(false);
     setCurrentTime(0);
+    setDuration(track.durationSeconds || 180);
 
     if (newQueue) {
       setQueue(newQueue);
       setQueueIndex(index !== undefined ? index : 0);
     }
 
-    let stream = track.streamUrl;
-
-    // Resolve remote stream if missing
-    if (!stream && !track.isLocal) {
-      try {
-        const res = await fetch(`/api/stream/${track.id}`);
-        const data = await res.json();
-        if (data.streamUrl) stream = data.streamUrl;
-      } catch {}
+    if (track.isLocal) {
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.pauseVideo === "function") {
+        ytPlayerRef.current.pauseVideo();
+      }
+      if (audioRef.current && track.streamUrl) {
+        audioRef.current.src = track.streamUrl;
+        audioRef.current.load();
+        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+      }
+    } else {
+      if (audioRef.current) audioRef.current.pause();
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === "function") {
+        ytPlayerRef.current.loadVideoById(track.id);
+        ytPlayerRef.current.playVideo();
+        setIsPlaying(true);
+      }
     }
 
-    if (audioRef.current && stream) {
-      audioRef.current.src = stream;
-      audioRef.current.load();
-      audioRef.current
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch(() => setIsPlaying(false));
-    }
-
-    // Fetch synced lyrics
     fetchLyrics(track.title, track.artist);
   }, []);
 
   const togglePlayPause = () => {
-    if (!audioRef.current) return;
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    if (currentTrack?.isLocal) {
+      if (!audioRef.current) return;
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+      }
+    } else if (ytPlayerRef.current) {
+      if (isPlaying) {
+        if (typeof ytPlayerRef.current.pauseVideo === "function") ytPlayerRef.current.pauseVideo();
+        setIsPlaying(false);
+      } else {
+        if (typeof ytPlayerRef.current.playVideo === "function") ytPlayerRef.current.playVideo();
+        setIsPlaying(true);
+      }
     }
   };
 
   const handleNext = useCallback(() => {
     if (queue.length === 0) return;
     if (repeatMode === "one") {
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play();
-      }
+      seek(0);
+      togglePlayPause();
       return;
     }
 
@@ -292,8 +404,7 @@ export default function Home() {
 
   const handlePrev = useCallback(() => {
     if (currentTime > 3) {
-      if (audioRef.current) audioRef.current.currentTime = 0;
-      setCurrentTime(0);
+      seek(0);
       return;
     }
     const prevIndex = queueIndex - 1 >= 0 ? queueIndex - 1 : queue.length - 1;
@@ -302,13 +413,49 @@ export default function Home() {
   }, [currentTime, queue, queueIndex, playTrack]);
 
   const seek = (time: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-      setCurrentTime(time);
+    setCurrentTime(time);
+    if (currentTrack?.isLocal) {
+      if (audioRef.current) audioRef.current.currentTime = time;
+    } else if (ytPlayerRef.current && typeof ytPlayerRef.current.seekTo === "function") {
+      ytPlayerRef.current.seekTo(time, true);
     }
   };
 
-  // 6. Real-Time Audio Canvas Spectrum Visualizer
+  const toggleMute = () => {
+    if (isMuted) {
+      setIsMuted(false);
+      if (audioRef.current) audioRef.current.volume = volume;
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.unMute === "function") {
+        ytPlayerRef.current.unMute();
+        ytPlayerRef.current.setVolume(Math.round(volume * 100));
+      }
+    } else {
+      setIsMuted(true);
+      if (audioRef.current) audioRef.current.volume = 0;
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.mute === "function") {
+        ytPlayerRef.current.mute();
+      }
+    }
+  };
+
+  // 6. Live Genre Selector
+  const selectGenre = async (genreName: string, query: string) => {
+    setSelectedGenre(genreName);
+    setLoadingTracks(true);
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      if (data.tracks && data.tracks.length > 0) {
+        setTracks(data.tracks);
+        setQueue(data.tracks);
+        setQueueIndex(0);
+      }
+    } catch {} finally {
+      setLoadingTracks(false);
+    }
+  };
+
+  // 7. Live Spectrum Visualizer Loop
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -358,7 +505,7 @@ export default function Home() {
     };
   }, [isPlaying]);
 
-  // 7. Synced LRC Lyrics Fetcher
+  // 8. Synced Lyrics Fetcher
   const fetchLyrics = async (title: string, artist: string) => {
     setLoadingLyrics(true);
     setLyrics([]);
@@ -410,7 +557,7 @@ export default function Home() {
     }
   }, [activeLyricIndex]);
 
-  // 8. Search Input Handler
+  // 9. Full-Length Search Input
   const handleSearchInput = (val: string) => {
     setSearchQuery(val);
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
@@ -431,10 +578,10 @@ export default function Home() {
       } finally {
         setIsSearching(false);
       }
-    }, 350);
+    }, 400);
   };
 
-  // 9. Local Audio File Handling
+  // 10. Local Audio Uploader
   const handleLocalAudioUpload = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const newTracks: Track[] = Array.from(files)
@@ -459,7 +606,7 @@ export default function Home() {
     }
   };
 
-  // 10. Favorites & Playlist Operations
+  // Favorites & Playlists
   const toggleFavorite = (track: Track) => {
     setFavorites((prev) => {
       const next = new Map(prev);
@@ -505,39 +652,15 @@ export default function Home() {
     setPlaylists(updated);
     localStorage.setItem("xosonic_playlists_data", JSON.stringify(updated));
     setTrackToAddToPlaylist(null);
-    showToast(`Added to playlist`);
+    showToast("Added to playlist");
   };
 
   const deletePlaylist = (plId: string) => {
     const updated = playlists.filter((p) => p.id !== plId);
     setPlaylists(updated);
     localStorage.setItem("xosonic_playlists_data", JSON.stringify(updated));
-    if (activePlaylistId === plId) setActivePlaylistId(null);
     showToast("Playlist deleted");
   };
-
-  // Keyboard Navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement) return;
-      if (e.code === "Space") {
-        e.preventDefault();
-        togglePlayPause();
-      } else if (e.code === "ArrowLeft") {
-        seek(Math.max(0, currentTime - 5));
-      } else if (e.code === "ArrowRight") {
-        seek(Math.min(duration, currentTime + 5));
-      } else if (e.code === "KeyM") {
-        setIsMuted((prev) => !prev);
-      } else if (e.code === "KeyL") {
-        setShowLyricsDrawer((prev) => !prev);
-      } else if (e.code === "KeyQ") {
-        setShowQueueDrawer((prev) => !prev);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentTime, duration, isPlaying]);
 
   const formatTime = (secs: number) => {
     if (isNaN(secs) || secs < 0) return "0:00";
@@ -555,7 +678,12 @@ export default function Home() {
       }}
       className="min-h-screen bg-m3-background text-m3-onSurface flex flex-col md:flex-row relative selection:bg-m3-primary/30 selection:text-m3-onPrimaryContainer font-sans"
     >
-      {/* Real Audio Player Element */}
+      {/* Hidden Mobile-Friendly YouTube Player Container */}
+      <div className="fixed -bottom-96 -right-96 w-48 h-48 opacity-0 pointer-events-none overflow-hidden z-[-10]">
+        <div id="youtube-player-container" />
+      </div>
+
+      {/* Real HTML5 Audio Player for Local Files */}
       <audio
         ref={audioRef}
         crossOrigin="anonymous"
@@ -576,7 +704,7 @@ export default function Home() {
         className="hidden"
       />
 
-      {/* Floating Toast Notification */}
+      {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 liquid-glass rounded-full px-5 py-2.5 border border-m3-primary/40 shadow-2xl flex items-center gap-2 text-xs font-semibold text-white animate-fadeIn">
           <Check className="w-4 h-4 text-m3-primary" />
@@ -608,7 +736,7 @@ export default function Home() {
                   XrLabs
                 </span>
               </h1>
-              <p className="text-[10px] text-m3-onSurfaceVariant">Open Sound Engine</p>
+              <p className="text-[10px] text-m3-onSurfaceVariant">Full-Length Audio</p>
             </div>
           </div>
 
@@ -698,7 +826,7 @@ export default function Home() {
       </aside>
 
       {/* ========================================================= */}
-      {/* 2. MAIN SCROLLABLE CONTENT AREA                           */}
+      {/* 2. MAIN SCROLLABLE DASHBOARD CANVAS                       */}
       {/* ========================================================= */}
       <main className="flex-1 flex flex-col h-screen overflow-y-auto pb-36">
         {/* Top Header with Real Active Presence & Search */}
@@ -715,7 +843,7 @@ export default function Home() {
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearchInput(e.target.value)}
-              placeholder="Search by song, artist, album, or genre..."
+              placeholder="Search any full-length song, artist, or album..."
               className="w-full pl-10 pr-10 py-2.5 rounded-full bg-m3-surfaceContainer text-xs text-white placeholder-m3-onSurfaceVariant/60 border border-transparent focus:border-m3-primary/50 focus:bg-m3-surfaceContainerHigh focus:outline-none transition"
             />
             {searchQuery && (
@@ -755,7 +883,7 @@ export default function Home() {
 
         {/* Content Body */}
         <div className="p-4 md:p-8 space-y-8 max-w-7xl mx-auto w-full">
-          {/* SEARCH VIEW (Active when user enters search) */}
+          {/* SEARCH RESULTS VIEW */}
           {hasSearched ? (
             <section className="space-y-4 animate-fadeIn">
               <div className="flex items-center justify-between">
@@ -765,7 +893,7 @@ export default function Home() {
                     Search Results for &ldquo;{searchQuery}&rdquo;
                   </h2>
                   <p className="text-xs text-m3-onSurfaceVariant">
-                    {isSearching ? "Searching audio stream network..." : `${searchResults.length} live tracks found`}
+                    {isSearching ? "Searching full-length songs..." : `${searchResults.length} full-length tracks found`}
                   </p>
                 </div>
               </div>
@@ -773,7 +901,7 @@ export default function Home() {
               {isSearching ? (
                 <div className="py-20 text-center text-xs text-m3-onSurfaceVariant">
                   <div className="w-8 h-8 rounded-full border-2 border-m3-primary border-t-transparent animate-spin mx-auto mb-3" />
-                  Resolving live audio streams...
+                  Resolving full-length tracks...
                 </div>
               ) : searchResults.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
@@ -793,7 +921,7 @@ export default function Home() {
                       >
                         <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-m3-surfaceContainer">
                           <img
-                            src={track.thumbnailUrl || "/logo.png"}
+                            src={track.thumbnailUrl || `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`}
                             alt={track.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                             onError={(e) => {
@@ -849,7 +977,7 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="p-12 rounded-3xl liquid-glass text-center text-xs text-m3-onSurfaceVariant">
-                  No matching tracks found. Try typing a different artist or song name.
+                  No matching tracks found. Try searching by song name or artist.
                 </div>
               )}
             </section>
@@ -862,7 +990,7 @@ export default function Home() {
                   Explore Sound Genres
                 </h2>
                 <p className="text-xs text-m3-onSurfaceVariant mt-0.5">
-                  Curated streams updated live across global sound channels
+                  Full-length tracks updated across global sound channels
                 </p>
               </div>
 
@@ -907,7 +1035,7 @@ export default function Home() {
                       >
                         <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-m3-surfaceContainer">
                           <img
-                            src={track.thumbnailUrl || "/logo.png"}
+                            src={track.thumbnailUrl || `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`}
                             alt={track.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                             onError={(e) => {
@@ -1020,7 +1148,7 @@ export default function Home() {
                         >
                           <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-m3-surfaceContainer">
                             <img
-                              src={track.thumbnailUrl || "/logo.png"}
+                              src={track.thumbnailUrl || `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`}
                               alt={track.title}
                               className="w-full h-full object-cover group-hover:scale-105 transition"
                               onError={(e) => {
@@ -1099,7 +1227,7 @@ export default function Home() {
                     <Upload className="w-8 h-8 text-m3-primary mx-auto mb-2 group-hover:scale-110 transition" />
                     <h4 className="text-sm font-bold text-white">Click or drag local files here</h4>
                     <p className="text-xs text-m3-onSurfaceVariant mt-1">
-                      Full in-browser audio playback for .mp3, .wav, .flac, .m4a.
+                      Full-length audio playback for .mp3, .wav, .flac, .m4a.
                     </p>
                   </div>
 
@@ -1137,7 +1265,7 @@ export default function Home() {
                   <div className="flex items-center gap-5 w-full md:w-auto">
                     <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden shadow-2xl border border-white/10 flex-shrink-0 bg-m3-surfaceContainer">
                       <img
-                        src={currentTrack.thumbnailUrl || "/logo.png"}
+                        src={currentTrack.thumbnailUrl || `https://i.ytimg.com/vi/${currentTrack.id}/hqdefault.jpg`}
                         alt={currentTrack.title}
                         className="w-full h-full object-cover"
                         onError={(e) => {
@@ -1148,13 +1276,13 @@ export default function Home() {
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-m3-primary flex items-center gap-1.5">
                         <Disc3 className={`w-3.5 h-3.5 ${isPlaying ? "animate-spin" : ""}`} />
-                        Now Loaded
+                        Now Playing (Full Song)
                       </span>
                       <h2 className="text-lg md:text-2xl font-black text-white mt-1 line-clamp-1">
                         {currentTrack.title}
                       </h2>
                       <p className="text-xs md:text-sm text-m3-onSurfaceVariant mt-0.5">
-                        {currentTrack.artist} • {currentTrack.album || "Single"}
+                        {currentTrack.artist} • {currentTrack.album || "Full Track"}
                       </p>
 
                       <div className="flex items-center gap-3 mt-4">
@@ -1163,7 +1291,7 @@ export default function Home() {
                           className="px-5 py-2 rounded-full bg-m3-primary text-m3-onPrimary font-bold text-xs flex items-center gap-2 hover:scale-105 transition shadow-lg shadow-m3-primary/25"
                         >
                           {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
-                          <span>{isPlaying ? "Pause Track" : "Play Now"}</span>
+                          <span>{isPlaying ? "Pause Track" : "Play Full Song"}</span>
                         </button>
 
                         <button
@@ -1184,7 +1312,7 @@ export default function Home() {
                     </span>
                     <canvas ref={canvasRef} width={180} height={48} className="w-full h-12" />
                     <span className="text-[9px] font-mono text-m3-primary/80 mt-1">
-                      {isPlaying ? "Audio Signal Active" : "Paused / Ready"}
+                      {isPlaying ? "Full Stream Active" : "Paused / Ready"}
                     </span>
                   </div>
                 </div>
@@ -1196,10 +1324,10 @@ export default function Home() {
                   <div>
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-m3-primary" />
-                      Trending Sound Records
+                      Trending Full-Length Tracks
                     </h3>
                     <p className="text-xs text-m3-onSurfaceVariant">
-                      Instant audio streaming with high-res artwork • Click to play
+                      Full songs without demo cuts • High-res artwork
                     </p>
                   </div>
                 </div>
@@ -1207,7 +1335,7 @@ export default function Home() {
                 {loadingTracks ? (
                   <div className="py-20 text-center text-xs text-m3-onSurfaceVariant">
                     <div className="w-8 h-8 rounded-full border-2 border-m3-primary border-t-transparent animate-spin mx-auto mb-3" />
-                    Loading fresh tracks...
+                    Loading full-length tracks...
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
@@ -1227,7 +1355,7 @@ export default function Home() {
                         >
                           <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-m3-surfaceContainer">
                             <img
-                              src={track.thumbnailUrl || "/logo.png"}
+                              src={track.thumbnailUrl || `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`}
                               alt={track.title}
                               className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                               onError={(e) => {
@@ -1289,13 +1417,13 @@ export default function Home() {
       </main>
 
       {/* ========================================================= */}
-      {/* 3. FLOATING HI-FI BOTTOM CONSOLE (Working Audio Deck)     */}
+      {/* 3. FLOATING HI-FI BOTTOM CONSOLE (Working Full Scrubber)   */}
       {/* ========================================================= */}
       <footer className="fixed bottom-0 left-0 right-0 z-40 liquid-glass border-t border-white/10 px-4 py-2.5 backdrop-blur-3xl shadow-2xl">
         <div className="max-w-7xl mx-auto flex flex-col gap-1.5">
-          {/* Audio Scrubber Progress Line */}
+          {/* Audio Scrubber Progress Line (Full Length) */}
           <div className="flex items-center gap-3 w-full">
-            <span className="text-[10px] font-mono text-m3-onSurfaceVariant w-8 text-right">
+            <span className="text-[10px] font-mono text-m3-onSurfaceVariant w-10 text-right">
               {formatTime(currentTime)}
             </span>
             <input
@@ -1306,7 +1434,7 @@ export default function Home() {
               onChange={(e) => seek(parseFloat(e.target.value))}
               className="flex-1 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-m3-primary"
             />
-            <span className="text-[10px] font-mono text-m3-onSurfaceVariant w-8">
+            <span className="text-[10px] font-mono text-m3-onSurfaceVariant w-10">
               {formatTime(duration)}
             </span>
           </div>
@@ -1318,7 +1446,7 @@ export default function Home() {
                 <>
                   <div className="relative w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-m3-surfaceContainer">
                     <img
-                      src={currentTrack.thumbnailUrl || "/logo.png"}
+                      src={currentTrack.thumbnailUrl || `https://i.ytimg.com/vi/${currentTrack.id}/hqdefault.jpg`}
                       alt={currentTrack.title}
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -1345,7 +1473,7 @@ export default function Home() {
               )}
             </div>
 
-            {/* Central Controls */}
+            {/* Central Transport Controls */}
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setIsShuffle((prev) => !prev)}
@@ -1423,7 +1551,7 @@ export default function Home() {
 
               <div className="hidden lg:flex items-center gap-2 pl-2 border-l border-white/10">
                 <button
-                  onClick={() => setIsMuted((prev) => !prev)}
+                  onClick={toggleMute}
                   className="text-m3-onSurfaceVariant hover:text-white"
                 >
                   {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
@@ -1438,6 +1566,9 @@ export default function Home() {
                     const v = parseFloat(e.target.value);
                     setVolume(v);
                     if (audioRef.current) audioRef.current.volume = v;
+                    if (ytPlayerRef.current && typeof ytPlayerRef.current.setVolume === "function") {
+                      ytPlayerRef.current.setVolume(Math.round(v * 100));
+                    }
                     setIsMuted(false);
                   }}
                   className="w-16 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-m3-primary"
