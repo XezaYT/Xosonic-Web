@@ -2,10 +2,12 @@ export interface Track {
   id: string;
   title: string;
   artist: string;
+  album?: string;
   durationSeconds: number;
   thumbnailUrl?: string;
   streamUrl?: string;
   isLocal?: boolean;
+  source?: 'itunes' | 'youtube' | 'local';
 }
 
 export interface LyricLine {
@@ -13,15 +15,10 @@ export interface LyricLine {
   text: string;
 }
 
-export interface RadarStats {
-  totalActiveListeners: number;
-  activeRooms: number;
-  totalStreamsServed: number;
-  topTrending: {
-    trackId: string;
-    title: string;
-    artist: string;
-    listeners: number;
-  }[];
-  timestamp: number;
+export interface Playlist {
+  id: string;
+  name: string;
+  description?: string;
+  trackIds: string[];
+  createdAt: number;
 }

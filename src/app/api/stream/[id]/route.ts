@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
-const PUBLIC_INSTANCES = [
-  'https://pipedapi.kavin.rocks',
-  'https://api.piped.privacy.com.de',
-  'https://piped-api.lunar.icu',
-  'https://api.piped.projectsegfau.lt',
+const INVIDIOUS_INSTANCES = [
+  'https://invidious.nerdvpn.de',
+  'https://yt.artemislena.eu',
+  'https://invidious.private.coffee',
+  'https://inv.tux.pizza',
 ];
 
 export async function GET(
@@ -15,26 +15,43 @@ export async function GET(
 ) {
   const { id } = params;
 
-  for (const instance of PUBLIC_INSTANCES) {
+  if (!id) {
+    return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
+  }
+
+  // If already an itunes id or non-youtube id, return standard response
+  if (id.startsWith('itunes-') || id.startsWith('local-')) {
+    return NextResponse.json({ error: 'Local or direct stream' }, { status: 400 });
+  }
+
+  for (const instance of INVIDIOUS_INSTANCES) {
     try {
-      const res = await fetch(`${instance}/streams/${id}`, {
-        headers: { 'User-Agent': 'Xosonic-Web/1.0 (XrLabs)' },
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+      const res = await fetch(`${instance}/api/v1/videos/${id}`, {
+        signal: controller.signal,
+        headers: { 'User-Agent': 'Xosonic-Web/2.0 (XrLabs)' },
       });
+      clearTimeout(timeoutId);
 
       if (!res.ok) continue;
 
       const data = await res.json();
-      const audioStreams = data.audioStreams || [];
-      if (!audioStreams.length) continue;
+      const adaptiveFormats = data.adaptiveFormats || [];
+      const audioStreams = adaptiveFormats.filter((f: any) =>
+        f.type && f.type.startsWith('audio/')
+      );
 
-      audioStreams.sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0));
-      const best = audioStreams[0];
-
-      return NextResponse.json({
-        streamUrl: best.url,
-        bitrate: best.bitrate,
-        format: best.format,
-      });
+      if (audioStreams.length > 0) {
+        audioStreams.sort((a: any, b: any) => (parseInt(b.bitrate) || 0) - (parseInt(a.bitrate) || 0));
+        const best = audioStreams[0];
+        return NextResponse.json({
+          streamUrl: best.url,
+          bitrate: best.bitrate,
+          container: best.container,
+        });
+      }
     } catch {
       continue;
     }
